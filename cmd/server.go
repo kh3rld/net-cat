@@ -57,6 +57,14 @@ func broadcast(message string) {
 		client.writer.Flush()
 	}
 }
+func sendHistory(client Client) {
+	history := "Previous messages:\n"
+	for _, c := range clients {
+		history += fmt.Sprintf("[%s]: Hello from %s\n", time.Now().Format("2006-01-02 15:04:05"), c.name)
+	}
+	client.writer.WriteString(history)
+	client.writer.Flush()
+}
 
 // Read messages from client and broadcast
 func readMessages(client Client) {
