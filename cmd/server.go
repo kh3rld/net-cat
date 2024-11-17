@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 const maxConnections = 10
@@ -55,4 +56,28 @@ func broadcast(message string) {
 		client.writer.WriteString(message)
 		client.writer.Flush()
 	}
+}
+
+// Read messages from client and broadcast
+func readMessages(client Client) {
+	scanner := bufio.NewScanner(client.conn)
+	for scanner.Scan() {
+		msg := scanner.Text()
+		if msg != "" {
+			timestamp := time.Now().Format("2006-01-02 15:04:05")
+			message := fmt.Sprintf("[%s][%s]: %s\n", timestamp, client.name, msg)
+			broadcast(message)
+		}
+	}
+	mu.Lock()
+	for i, c := range clients {
+		if c.name == client.name {
+			clients = append(clients[:i], clients[i+1:]...)
+			break
+		}
+	}
+	mu.Unlock()
+
+	broadcast(fmt.Sprintf("%s has left the chat...\n", client.name))
+	client.conn.Close()
 }
