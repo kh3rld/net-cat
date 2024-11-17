@@ -46,3 +46,13 @@ func startServer(port string) {
 		go handleClient(conn)
 	}
 }
+
+// Broadcast messages to all clients
+func broadcast(message string) {
+	mu.Lock()
+	defer mu.Unlock()
+	for _, client := range clients {
+		client.writer.WriteString(message)
+		client.writer.Flush()
+	}
+}
