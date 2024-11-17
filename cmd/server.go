@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -88,4 +89,53 @@ func readMessages(client Client) {
 
 	broadcast(fmt.Sprintf("%s has left the chat...\n", client.name))
 	client.conn.Close()
+}
+
+// Handle communication with a client
+func handleClient(conn net.Conn) {
+	fmt.Fprintf(conn, "Welcome to TCP-Chat!\n")
+	fmt.Fprintf(conn, "         _nnnn_\n")
+	fmt.Fprintf(conn, "        dGGGGMMb\n")
+	fmt.Fprintf(conn, "       @p~qp~~qMb\n")
+	fmt.Fprintf(conn, "       M|@||@) M|\n")
+	fmt.Fprintf(conn, "       @,----.JM|\n")
+	fmt.Fprintf(conn, "      JS^\\__/  qKL\n")
+	fmt.Fprintf(conn, "     dZP        qKRb\n")
+	fmt.Fprintf(conn, "    dZP          qKKb\n")
+	fmt.Fprintf(conn, "   fZP            SMMb\n")
+	fmt.Fprintf(conn, "   HZM            MMMM\n")
+	fmt.Fprintf(conn, "   FqM            MMMM\n")
+	fmt.Fprintf(conn, " __| \".        |\\dS\"qML\n")
+	fmt.Fprintf(conn, " |    `.       | `' \\Zq\n")
+	fmt.Fprintf(conn, "_)      \\.___.,|     .'\n")
+	fmt.Fprintf(conn, "\\____   )MMMMMP|   .'\n")
+	fmt.Fprintf(conn, "     `-'       `--'\n")
+	fmt.Fprintf(conn, "[ENTER YOUR NAME]: ")
+
+	scanner := bufio.NewScanner(conn)
+	scanner.Scan()
+	clientName := scanner.Text()
+	clientName = strings.TrimSpace(clientName)
+
+	if clientName == "" {
+		fmt.Fprintf(conn, "[ERROR] Name cannot be empty.\n")
+		conn.Close()
+		return
+	}
+	client := Client{
+		name:   clientName,
+		conn:   conn,
+		writer: bufio.NewWriter(conn),
+	}
+
+	mu.Lock()
+	clients = append(clients, client)
+	mu.Unlock()
+
+	broadcast(fmt.Sprintf("%s has joined the chat...\n", client.name))
+
+	sendHistory(client)
+
+	go readMessages(client)
+	select {}
 }
