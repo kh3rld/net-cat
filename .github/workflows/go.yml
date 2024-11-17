@@ -22,7 +22,7 @@ jobs:
         go-version: '1.20'
 
     - name: Build
-      run: cd cmd && go build -v .
+      run: go mod init github.com/kh3rld/net-cat && cd cmd && go build -v .
 
     - name: Test
       run: go test -v ./...
