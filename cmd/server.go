@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -18,9 +19,10 @@ type Client struct {
 	writer *bufio.Writer
 }
 
-var clients []Client
-var mu sync.Mutex
-var msgChannel = make(chan string)
+var (
+	clients []Client
+	mu      sync.Mutex
+)
 
 // Server function to handle incoming connections
 func startServer(port string) {
@@ -58,6 +60,7 @@ func broadcast(message string) {
 		client.writer.Flush()
 	}
 }
+
 func sendHistory(client Client) {
 	history := "Previous messages:\n"
 	for _, c := range clients {
@@ -115,6 +118,15 @@ func readMessages(client Client) {
 			timestamp := time.Now().Format("2006-01-02 15:04:05")
 			message := fmt.Sprintf("[%s][%s]: %s\n", timestamp, client.name, msg)
 			broadcast(message)
+			saveLog, err := os.OpenFile("/tmp/log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+			if err != nil {
+				fmt.Printf("Error: %v", err)
+			}
+			defer saveLog.Close()
+			_, err = saveLog.WriteString(message + "\n")
+			if err != nil {
+				fmt.Printf("Error: %v", err)
+			}
 		}
 	}
 
