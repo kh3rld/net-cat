@@ -72,15 +72,55 @@ func readMessages(client Client) {
 	scanner := bufio.NewScanner(client.conn)
 	for scanner.Scan() {
 		msg := scanner.Text()
+		if strings.HasPrefix(msg, "/rename ") {
+			// Handle name change command
+			newName := strings.TrimSpace(strings.TrimPrefix(msg, "/rename "))
+			if newName == "" {
+				client.writer.WriteString("[ERROR] New name cannot be empty.\n")
+				client.writer.Flush()
+				continue
+			}
+
+			mu.Lock()
+			// Check if the new name is already taken
+			nameExists := false
+			for _, c := range clients {
+				if c.name == newName {
+					nameExists = true
+					break
+				}
+			}
+			if nameExists {
+				client.writer.WriteString("[ERROR] Name already in use. Choose a different name.\n")
+				client.writer.Flush()
+				mu.Unlock()
+				continue
+			}
+
+			oldName := client.name
+			client.name = newName
+			for i := range clients {
+				if clients[i].conn == client.conn {
+					clients[i].name = newName
+					break
+				}
+			}
+			mu.Unlock()
+
+			broadcast(fmt.Sprintf("%s changed their name to %s.\n", oldName, newName))
+			continue
+		}
+
 		if msg != "" {
 			timestamp := time.Now().Format("2006-01-02 15:04:05")
 			message := fmt.Sprintf("[%s][%s]: %s\n", timestamp, client.name, msg)
 			broadcast(message)
 		}
 	}
+
 	mu.Lock()
 	for i, c := range clients {
-		if c.name == client.name {
+		if c.conn == client.conn {
 			clients = append(clients[:i], clients[i+1:]...)
 			break
 		}
