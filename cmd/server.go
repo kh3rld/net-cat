@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const maxConnections = 10
+const maxConn = 10
 
 type Client struct {
 	name   string
@@ -40,7 +40,7 @@ func startServer(port string) {
 			continue
 		}
 		mu.Lock()
-		if len(clients) >= maxConnections {
+		if len(clients) >= maxConn {
 			conn.Close()
 			mu.Unlock()
 			continue
