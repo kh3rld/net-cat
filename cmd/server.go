@@ -94,7 +94,7 @@ func readMessages(client Client) {
 				}
 			}
 			if nameExists {
-				client.writer.WriteString("[ERROR] Name already in use. Choose a different name.\n")
+				client.writer.WriteString("[ERROR] [Name already in use. Choose a different name]: ")
 				client.writer.Flush()
 				mu.Unlock()
 				continue
@@ -166,8 +166,14 @@ func handleClient(conn net.Conn) {
 
 	scanner := bufio.NewScanner(conn)
 	scanner.Scan()
-	clientName := scanner.Text()
-	clientName = strings.TrimSpace(clientName)
+	clientName := strings.TrimSpace(scanner.Text())
+	for _, c := range clients {
+		if clientName == c.name {
+			fmt.Fprintf(conn, "[ERROR] Name already in use. Choose a different name.\n Press any key then Enter to exit: ")
+			conn.Close()
+			return
+		}
+	}
 
 	if clientName == "" {
 		fmt.Fprintf(conn, "[ERROR] Name cannot be empty.\n")
