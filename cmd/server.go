@@ -52,19 +52,25 @@ func startServer(port string) {
 }
 
 // Broadcast messages to all clients
-func broadcast(message string) {
+func broadcast(message string, excludeClient *Client) {
 	mu.Lock()
 	defer mu.Unlock()
 	for _, client := range clients {
+		if excludeClient != nil && client == *excludeClient {
+			continue
+		}
+		if client.conn == nil {
+			continue // Skip clients whose connection has been closed
+		}
 		client.writer.WriteString(message)
 		client.writer.Flush()
 	}
 }
 
 func sendHistory(client Client) {
-	history := "Previous messages:\n"
+	history := ""
 	for _, c := range clients {
-		history += fmt.Sprintf("[%s]: Hello from %s\n", time.Now().Format("2006-01-02 15:04:05"), c.name)
+		history += fmt.Sprintf("[%s]: %s\n", time.Now().Format("2006-01-02 15:04:05"), c.name)
 	}
 	client.writer.WriteString(history)
 	client.writer.Flush()
@@ -110,14 +116,14 @@ func readMessages(client Client) {
 			}
 			mu.Unlock()
 
-			broadcast(fmt.Sprintf("%s changed their name to %s.\n", oldName, newName))
+			broadcast(fmt.Sprintf("%s changed their name to %s.\n", oldName, newName), nil)
 			continue
 		}
 
 		if msg != "" {
 			timestamp := time.Now().Format("2006-01-02 15:04:05")
 			message := fmt.Sprintf("[%s][%s]: %s\n", timestamp, client.name, msg)
-			broadcast(message)
+			broadcast(message, nil)
 			saveLog, err := os.OpenFile("/tmp/log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 			if err != nil {
 				fmt.Printf("Error: %v", err)
@@ -139,7 +145,7 @@ func readMessages(client Client) {
 	}
 	mu.Unlock()
 
-	broadcast(fmt.Sprintf("%s has left the chat...\n", client.name))
+	broadcast(fmt.Sprintf("%s has left the chat...\n", client.name), nil)
 	client.conn.Close()
 }
 
@@ -189,8 +195,12 @@ func handleClient(conn net.Conn) {
 	mu.Lock()
 	clients = append(clients, client)
 	mu.Unlock()
-
-	broadcast(fmt.Sprintf("%s has joined the chat...\n", client.name))
+	for _, c := range clients {
+		if c.name == client.name {
+			// Broadcast that a new client has joined the chat, excluding the joining client
+			broadcast(fmt.Sprintf("%s has joined the chat...\n", client.name), &client)
+		}
+	}
 
 	sendHistory(client)
 
