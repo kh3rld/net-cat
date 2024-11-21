@@ -129,6 +129,16 @@ func readMessages(client Client) {
 		broadcast(message, &client)
 		saveLog(message)
 	}
+	mu.Lock()
+	for i, c := range clients {
+		if c.name == client.name {
+			clients = append(clients[:i], clients[i+1:]...)
+			break
+		}
+	}
+	mu.Unlock()
+	broadcast(fmt.Sprintf("%s has left the chat...\n", client.name), &client)
+	client.conn.Close()
 }
 
 // Save the message to a log file
