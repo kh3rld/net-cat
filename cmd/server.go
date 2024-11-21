@@ -113,7 +113,7 @@ func handleClient(conn net.Conn) {
 	mu.Unlock()
 
 	for _, historyMessage := range chats {
-		fmt.Fprintf(client.conn, historyMessage)
+		fmt.Fprint(client.conn, historyMessage)
 	}
 	broadcast(fmt.Sprintf("%s has joined the chat...\n", client.name), &client)
 	go readMessages(client)
