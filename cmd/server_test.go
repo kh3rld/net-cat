@@ -70,3 +70,17 @@ func TestReadMessages(t *testing.T) {
 		t.Errorf("Message not broadcasted correctly. Chats: %v", chatss)
 	}
 }
+
+func TestStartServer(t *testing.T) {
+	go startServer("8080")
+
+	time.Sleep(1 * time.Second)
+
+	conn, err := net.Dial("tcp", "localhost:8080")
+	if err != nil {
+		t.Fatalf("Expected no error connecting to the server, but got %v", err)
+	}
+	defer conn.Close()
+
+	t.Log("Server accepted the connection successfully.")
+}
