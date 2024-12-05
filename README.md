@@ -24,7 +24,9 @@ Ensure you have go version 1.23 installed in your machine. Clone the repo and na
 
 ```bash
 git clone https://learn.zone01kisumu.ke/git/khahussein/net-cat
-cd net-cat/cmd
+cd net-cat
+go mod init github.com/kh3rld/net-cat
+cd cmd
 ```
 
 ## Usage

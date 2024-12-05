@@ -94,7 +94,7 @@ func handleClient(conn net.Conn) {
 	client.name = strings.TrimSpace(scanner.Text())
 
 	if client.name == "" {
-		fmt.Fprintf(conn, "[ERROR] Name cannot be empty.\n")
+		fmt.Fprintf(conn, "[ERROR] Name cannot be empty, press enter and start again.\n")
 		conn.Close()
 		return
 	}
@@ -103,7 +103,7 @@ func handleClient(conn net.Conn) {
 	mu.Lock()
 	for _, c := range clients {
 		if client.name == c.name {
-			fmt.Fprintf(conn, "[ERROR] Name already in use.\n")
+			fmt.Fprintf(conn, "[ERROR] Name already in use, press enter to start again.\n")
 			mu.Unlock()
 			conn.Close()
 			return
