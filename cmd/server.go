@@ -119,6 +119,7 @@ func handleClient(conn net.Conn) {
 	go readMessages(client)
 }
 
+// Read messages from a client and broadcast them to everyone except the sender
 func readMessages(client Client) {
 	scanner := bufio.NewScanner(client.conn)
 	for scanner.Scan() {
@@ -126,11 +127,12 @@ func readMessages(client Client) {
 		if msg == "" {
 			continue
 		}
-		message := fmt.Sprintf("[%s][%s]: %s\n", time.Now().Format("2006-01-02 15:04:05"), client.name, msg)
-		chats = append(chats, message)
-		broadcast(message, &client)
 
-		_, err := client.writer.WriteString(message)
+		timestampedMessage := fmt.Sprintf("[%s][%s]: %s\n", time.Now().Format("2006-01-02 15:04:05"), client.name, msg)
+		chats = append(chats, timestampedMessage)
+		broadcast(timestampedMessage, &client)
+
+		_, err := client.writer.WriteString("\033[F\033[K" + timestampedMessage)
 		if err != nil {
 			log.Printf("Error writing to client %s: %v", client.name, err)
 			continue
@@ -139,7 +141,7 @@ func readMessages(client Client) {
 			log.Printf("Error flushing to client %s: %v", client.name, err)
 		}
 
-		saveLog(message)
+		saveLog(timestampedMessage)
 	}
 
 	mu.Lock()
