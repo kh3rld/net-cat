@@ -94,7 +94,7 @@ func handleClient(conn net.Conn) {
 	client.name = strings.TrimSpace(scanner.Text())
 
 	if client.name == "" {
-		fmt.Fprintf(conn, "[ERROR] Name cannot be empty.\n")
+		fmt.Fprintf(conn, "[ERROR] Name cannot be empty, press enter and start again.\n")
 		conn.Close()
 		return
 	}
@@ -103,7 +103,7 @@ func handleClient(conn net.Conn) {
 	mu.Lock()
 	for _, c := range clients {
 		if client.name == c.name {
-			fmt.Fprintf(conn, "[ERROR] Name already in use.\n")
+			fmt.Fprintf(conn, "[ERROR] Name already in use, press enter to start again.\n")
 			mu.Unlock()
 			conn.Close()
 			return
@@ -124,11 +124,26 @@ func readMessages(client Client) {
 	scanner := bufio.NewScanner(client.conn)
 	for scanner.Scan() {
 		msg := scanner.Text()
-		message := fmt.Sprintf("[%s][%s]: %s\n", time.Now().Format("2006-01-02 15:04:05"), client.name, msg)
-		chats = append(chats, message)
-		broadcast(message, &client)
-		saveLog(message)
+		if msg == "" {
+			continue
+		}
+
+		timestampedMessage := fmt.Sprintf("[%s][%s]: %s\n", time.Now().Format("2006-01-02 15:04:05"), client.name, msg)
+		chats = append(chats, timestampedMessage)
+		broadcast(timestampedMessage, &client)
+
+		_, err := client.writer.WriteString("\033[F\033[K" + timestampedMessage)
+		if err != nil {
+			log.Printf("Error writing to client %s: %v", client.name, err)
+			continue
+		}
+		if err := client.writer.Flush(); err != nil {
+			log.Printf("Error flushing to client %s: %v", client.name, err)
+		}
+
+		saveLog(timestampedMessage)
 	}
+
 	mu.Lock()
 	for i, c := range clients {
 		if c.name == client.name {

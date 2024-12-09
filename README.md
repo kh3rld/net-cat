@@ -23,8 +23,10 @@ This project is a simple implementation of a group chat system, modeled after th
 Ensure you have go version 1.23 installed in your machine. Clone the repo and navigate to the project directory.
 
 ```bash
-git clone 
-cd netcat/cmd
+git clone https://learn.zone01kisumu.ke/git/khahussein/net-cat
+cd net-cat
+go mod init github.com/kh3rld/net-cat
+cd cmd
 ```
 
 ## Usage
